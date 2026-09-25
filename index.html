@@ -26,11 +26,12 @@
 </main><div id="toast"></div><script>
 const KEY='MARAWIS_OS_FULL_V1';
 const SHEET_KEY='MARAWIS_SHEET_URL';
-const SHEET_URL='https://script.google.com/macros/s/AKfycbx7Nz2BSdGGWEAmdOdoHQgQTTOfvzpS2uidZ10YWHuNkMJV4GDIL8pMvZOoMUtyvIM5/exec';
+const SHEET_URL='https://script.google.com/macros/s/AKfycbzEuJ_MB2SqlOIvReh-na1wNWqajICcNbxye_xj80ItWPmPcMugULD7i8ZTFWWdZyWM/exec';
 localStorage.setItem(SHEET_KEY,SHEET_URL);
-const members=[['MRW-0001','Alfryza Vito Y','Ketua Marawis'],['MRW-0002','Hafidz Rabbani','Bendahara'],['MRW-0003','Maldiv Abizar E','Wakil Ketua'],['MRW-0004','M. Sahrul','Sekretaris'],['MRW-0005','Fathir','Anggota'],['MRW-0006','Afif Haikal A','Anggota'],['MRW-0007','Moreno P.D','Anggota'],['MRW-0008','Achmad F.P.T','Anggota'],['MRW-0009','Rendyka A.P','Anggota'],['MRW-0010','Keyro Zahran U','Anggota'],['MRW-0011','Riffat Atthariq','Anggota'],['MRW-0012','Rijal','Anggota'],['MRW-0013','Khoirul Umam','Anggota'],['MRW-0014','Bayu Alfi','Anggota'],['MRW-0015','Fahrezy R','Anggota'],['MRW-0016','Mikail Ozil S','Anggota'],['MRW-0017','Dafa Putra A','Anggota'],['MRW-0018','M. Zahid','Anggota'],['MRW-0019','Kenza Putra Z','Anggota'],['MRW-0020','Diaz R','Anggota']];
+const members=[['MRW-0001','Alfryza Vito Y','Ketua Marawis'],['MRW-0002','Hafidz Rabbani','Bendahara'],['MRW-0003','Maldiv Abizar E','Wakil Ketua'],['MRW-0004','M. Sahrul','Sekretaris'],['MRW-0005','Fathir','Anggota'],['MRW-0006','Afif Haikal A','Koordinator Lapangan'],['MRW-0007','Moreno P.D','Anggota'],['MRW-0008','Achmad F.P.T','Anggota'],['MRW-0009','Rendyka A.P','Anggota'],['MRW-0010','Keyro Zahran U','Anggota'],['MRW-0011','Riffat Atthariq','Anggota'],['MRW-0012','Rijal','Anggota'],['MRW-0013','Khoirul Umam','Anggota'],['MRW-0014','Bayu Alfi','Anggota'],['MRW-0015','Fahrezy R','Anggota'],['MRW-0016','Mikail Ozil S','Anggota'],['MRW-0017','Dafa Putra A','Anggota'],['MRW-0018','M. Zahid','Anggota'],['MRW-0019','Kenza Putra Z','Anggota'],['MRW-0020','Diaz R','Anggota']];
 let db=JSON.parse(localStorage.getItem(KEY)||'null');
-if(!db){db={members:members.map((m,i)=>({id:m[0],name:m[1],role:m[2],points:i===0?1280:800,level:i===0?12:8})),attendance:[]};save()}
+if(!db){db={members:members.map((m,i)=>({id:m[0],name:m[1],role:m[2],points:i===0?1280:800,level:i===0?12:8,basePoints:i===0?1280:800})),attendance:[]};save()}
+else {db.members.forEach((m,i)=>{if(typeof m.basePoints!=='number')m.basePoints=m.id==='MRW-0001'?1280:800});save()}
 let selected=localStorage.getItem('MARAWIS_SELECTED')||'MRW-0001'; let scanner=null;
 function save(){localStorage.setItem(KEY,JSON.stringify(db))} function member(id){return db.members.find(x=>x.id===id)}
 function today(){return new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})} function now(){return new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
@@ -54,7 +55,7 @@ document.getElementById('search').oninput=renderMemberList;
 function findQR(text){let id=text.replace(/^MARAWIS:/,'').trim();return member(id)}
 function showScan(m){let r=document.getElementById('scanResult');r.className='scan-card';r.innerHTML=`<h2>🥁 ${m.name}</h2><p class="muted">${m.id} • ${m.role}</p><div class="actions"><button class="primary" onclick="record('${m.id}','HADIR','')">🟢 HADIR</button><button class="danger" onclick="absence('${m.id}')">🔴 TIDAK HADIR</button></div>`}
 function absence(id){let r=document.getElementById('scanResult');r.className='scan-card';r.innerHTML=`<h2>Tidak Hadir</h2><p class="muted">Pilih alasan ketidakhadiran.</p><div class="actions"><button class="warn" onclick="record('${id}','SAKIT','Sakit')">🤒 Sakit</button><button onclick="record('${id}','IZIN','Izin')">📝 Izin</button><button class="danger" onclick="record('${id}','ALPHA','Alpha')">❌ Alpha</button></div>`}
-function record(id,status,reason){let m=member(id);if(!m)return;let d=today();if(db.attendance.some(a=>a.member_id===id&&a.date===d)){toast('⚠️ Anggota sudah absen hari ini');return}let pts=status==='HADIR'?10:status==='ALPHA'?-10:0;m.points+=pts;m.level=Math.max(1,Math.floor(m.points/100));let row={id:'ATT-'+Date.now(),member_id:id,name:m.name,date:d,time:now(),activity:'Latihan Rutin',status,reason,points:pts,synced:false};db.attendance.push(row);save();renderAll();showScanSaved(m,row);syncToSheets(row)}
+function record(id,status,reason){let m=member(id);if(!m)return;let d=today();if(db.attendance.some(a=>a.member_id===id&&a.date===d)){toast('⚠️ Anggota sudah absen hari ini');return}let pts=status==='HADIR'?10:status==='ALPHA'?-10:0;let row={id:'ATT-'+Date.now(),member_id:id,name:m.name,date:d,time:now(),activity:'Latihan Rutin',status,reason,points:pts,synced:false};db.attendance.push(row);recalcMemberPoints();save();renderAll();showScanSaved(member(id),row);syncToSheets(row)}
 function showScanSaved(m,row){let r=document.getElementById('scanResult');r.className='scan-card';r.innerHTML=`<h2>✅ Absensi Tersimpan</h2><p><b>${m.name}</b><br>${row.status}${row.reason?' • '+row.reason:''}<br>${row.time} • ${row.points>=0?'+':''}${row.points} poin</p><small class="muted">Sinkronisasi spreadsheet: ${row.synced?'OK':'menunggu / gagal'}</small>`;toast('Absensi berhasil disimpan')}
 function renderDashboard(){let d=today(),a=db.attendance.filter(x=>x.date===d);document.getElementById('kMembers').textContent=db.members.length;document.getElementById('kPresent').textContent=a.filter(x=>x.status==='HADIR').length;document.getElementById('kExcused').textContent=a.filter(x=>x.status==='IZIN'||x.status==='SAKIT').length;document.getElementById('kAlpha').textContent=a.filter(x=>x.status==='ALPHA').length;let r=a.slice(-6).reverse();document.getElementById('recent').innerHTML=r.length?r.map(x=>`<div class="recent-row"><div><b>${x.name}</b><div class="muted">${x.time} • ${x.activity}</div></div><span class="badge ${x.status.toLowerCase()}">${x.status}</span></div>`).join(''):'<div class="empty">Belum ada absensi hari ini.</div>';document.getElementById('syncState').textContent=getSheetUrl()?'SHEETS':'LOCAL'}
 function renderTable(){let arr=[...db.attendance].reverse();document.getElementById('tableBody').innerHTML=arr.length?arr.map(x=>`<tr><td>${x.time}<br><span class="muted">${x.date}</span></td><td>${x.name}</td><td>${x.member_id}</td><td>${x.activity}</td><td><span class="badge ${x.status.toLowerCase()}">${x.status}${x.reason?' • '+x.reason:''}</span></td><td>${x.points>0?'+':''}${x.points}</td><td>${x.synced?'✓':'—'}</td></tr>`).join(''):'<tr><td colspan="7">Belum ada data.</td></tr>';document.getElementById('sheetUrl').value=getSheetUrl();document.getElementById('sheetStatus').textContent='Endpoint MARAWIS OS aktif.'}
@@ -69,10 +70,45 @@ async function switchCamera(){try{let cams=await listCameras();if(cams.length<2)
 async function stopScanner(){if(!scanner)return;try{await scanner.stop();scanner.clear()}catch(e){console.warn(e)}finally{scanner=null;cameraMsg('Kamera berhenti. Tekan “Izinkan & Mulai Kamera” untuk memulai lagi.')}}
 function getSheetUrl(){return SHEET_URL}
 function saveSheetUrl(){}
-async function testSheetsConnection(){const s=document.getElementById('sheetStatus');s.textContent='⏳ Menghubungkan ke MARAWIS OS API...';try{const r=await fetch(SHEET_URL,{method:'GET',cache:'no-store'});const data=await r.json();if(data.ok){s.textContent='✅ API aktif — MARAWIS OS API siap menerima absensi.';toast('✅ API Google Sheets aktif')}else{s.textContent='⚠️ API merespons, tetapi status tidak OK.'}}catch(e){s.textContent='⚠️ Browser tidak dapat membaca respons API. Sistem tetap mencoba sinkronisasi saat absensi disimpan.';console.warn(e)}}
-async function syncToSheets(row){let url=getSheetUrl();if(!url)return;try{await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(row)});row.synced=true;save();renderTable();renderDashboard()}catch(e){console.warn('Sheets sync failed',e);row.synced=false;save();renderTable();}}
+let sheetSyncBusy=false;
+async function syncFromSheets(silent=false){
+  if(sheetSyncBusy)return;
+  sheetSyncBusy=true;
+  try{
+    const r=await fetch(SHEET_URL+'?t='+Date.now(),{method:'GET',cache:'no-store'});
+    const data=await r.json();
+    if(!data.ok)throw new Error(data.error||'API tidak OK');
+    const serverRows=Array.isArray(data.attendance)?data.attendance:[];
+    const pending=db.attendance.filter(x=>x.synced===false);
+    const byId=new Map(serverRows.map(x=>[String(x.id),x]));
+    pending.forEach(x=>{if(!byId.has(String(x.id)))byId.set(String(x.id),x)});
+    db.attendance=[...byId.values()].map(x=>({...x,synced:true}));
+    recalcMemberPoints();
+    save();
+    renderAll();
+    if(!silent)toast('☁️ Data Google Sheets diperbarui');
+    const st=document.getElementById('sheetStatus');
+    if(st)st.textContent='🟢 Terhubung • sinkron otomatis aktif';
+  }catch(e){
+    const st=document.getElementById('sheetStatus');
+    if(st)st.textContent='🟡 Menunggu koneksi ke Google Sheets...';
+    if(!silent)console.warn('Sheets pull failed',e);
+  }finally{sheetSyncBusy=false}
+}
+function recalcMemberPoints(){
+  db.members.forEach(m=>{
+    if(typeof m.basePoints!=='number')m.basePoints=m.points;
+    const earned=db.attendance.filter(a=>a.member_id===m.id).reduce((sum,a)=>sum+Number(a.points||0),0);
+    m.points=m.basePoints+earned;
+    m.level=Math.max(1,Math.floor(m.points/100));
+  });
+}
+async function testSheetsConnection(){const s=document.getElementById('sheetStatus');s.textContent='⏳ Menghubungkan ke MARAWIS OS API...';try{await syncFromSheets(true);s.textContent='✅ API aktif — database Google Sheets tersambung dan sinkron otomatis.';toast('✅ Google Sheets tersambung')}catch(e){s.textContent='⚠️ Belum dapat mengambil data dari Google Sheets.';console.warn(e)}}
+async function syncToSheets(row){let url=getSheetUrl();if(!url)return;try{await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(row)});row.synced=true;save();renderTable();renderDashboard();setTimeout(()=>syncFromSheets(true),900)}catch(e){console.warn('Sheets sync failed',e);row.synced=false;save();renderTable();}}
+setInterval(()=>{if(document.visibilityState==='visible')syncFromSheets(true)},5000);
 function exportCSV(){let rows=[['ID Absensi','Tanggal','Waktu','Member','Member ID','Aktivitas','Status','Alasan','Poin'],...db.attendance.map(x=>[x.id,x.date,x.time,x.name,x.member_id,x.activity,x.status,x.reason,x.points])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');let blob=new Blob([csv],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rekap-marawis.csv';a.click();URL.revokeObjectURL(a.href)}
 renderAll();
+syncFromSheets(true);
 window.addEventListener('load',()=>{setTimeout(()=>document.getElementById('introScreen').classList.add('hide'),2600)});
 </script>
 </body></html>
